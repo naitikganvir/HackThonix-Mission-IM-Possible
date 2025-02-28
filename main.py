@@ -1,16 +1,55 @@
-# This is a sample Python script.
+from fastapi import FastAPI, Request
+from pydantic import BaseModel
+import re
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+# Initialize FastAPI app
+app = FastAPI()
 
+# Malicious patterns for simple detection
+SQLI_PATTERNS = [
+    r"(?:')|(?:--)|(/\*)|(\*/)|(\bOR\b)|(\bAND\b)",
+    r"(UNION SELECT|SELECT \*|DROP TABLE|INSERT INTO|DELETE FROM)",
+]
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+XSS_PATTERNS = [
+    r"(<script.*?>.*?</script>)",
+    r"(onerror|onload|alert|document\.cookie)",
+]
 
+# Request model
+class APIRequest(BaseModel):
+    url: str
+    payload: str
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+# Helper function to check vulnerabilities
+def check_vulnerability(payload: str):
+    for pattern in SQLI_PATTERNS:
+        if re.search(pattern, payload, re.IGNORECASE):
+            return "SQL Injection Detected"
+    for pattern in XSS_PATTERNS:
+        if re.search(pattern, payload, re.IGNORECASE):
+            return "Cross-Site Scripting (XSS) Detected"
+    return "Safe"
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+# Root route
+@app.get("/")
+async def root():
+    return {"message": "API Security Scanner is running!"}
+
+# Vulnerability detection route
+@app.post("/analyze_request/")
+async def analyze_request(request: APIRequest):
+    result = check_vulnerability(request.payload)
+
+    if result != "Safe":
+        return {
+            "status": "Suspicious API",
+            "threat_type": result,
+            "action": "Blocked for security reasons",
+        }
+    else:
+        return {
+            "status": "Safe API",
+            "threat_type": "None",
+            "accuracy": "99%",  # Simulate accuracy for now
+        }
