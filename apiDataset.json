@@ -1,0 +1,7 @@
+[
+    { "apiUrl": "https://example.com", "isFraud": false },
+    { "apiUrl": "https://malicious.com", "isFraud": true },
+    { "apiUrl": "https://safeapi.org", "isFraud": false },
+    { "apiUrl": "https://phishing-site.net", "isFraud": true }
+  ]
+  
